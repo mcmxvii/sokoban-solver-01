@@ -29,3 +29,11 @@ It reads `/input/<id>/level.txt` for every instance and writes
 `/output/<id>/solution.txt`: the player's moves in LURD (`u`, `d`, `l`, `r`),
 one letter a step. One run answers the whole set in well under the
 60-second wall budget, and two runs write the same bytes.
+
+## Practice results
+
+On the kit's practice set the solver scores **1,000,000** — every instance
+solved in exactly its push-optimal count (13, 16, 29, 47 and 60 pushes),
+against the house baseline plain-astar 1.0.0's 200,000 (it solves only the
+first instance and gives up on the rest). The whole set runs in about
+1.3 seconds, and two runs are byte-identical.

@@ -221,40 +221,20 @@ function solvePushOptimal(lv: Level, exit: number | null, maxStates = MAX_STATES
   if (lv.boxes.some((b) => !live[b])) return null;
 
   // Flood the player's reachable region from `from` with `occupied` in the
-  // way, stamping it `stamp`; returns its lowest square.
-  const flood = (from: number, stampHere: number): number => {
+  // way, stamping it `stampHere` on `marks`; returns its lowest square.
+  const floodRegion = (marks: Int32Array, from: number, stampHere: number): number => {
     let low = from;
     let n = 0;
     stack[n++] = from;
-    seen[from] = stampHere;
+    marks[from] = stampHere;
     while (n > 0) {
       const p = stack[--n];
       if (p < low) low = p;
       for (const d of DIRS) {
         const q = p + d.dy * w + d.dx;
         if (q < 0 || q >= size) continue;
-        if (wall[q] === 0 && occupied[q] === 0 && seen[q] !== stampHere) {
-          seen[q] = stampHere;
-          stack[n++] = q;
-        }
-      }
-    }
-    return low;
-  };
-  // The same flood on the `mark` array, for a new state's key.
-  const floodMark = (from: number, stampHere: number): number => {
-    let low = from;
-    let n = 0;
-    stack[n++] = from;
-    mark[from] = stampHere;
-    while (n > 0) {
-      const p = stack[--n];
-      if (p < low) low = p;
-      for (const d of DIRS) {
-        const q = p + d.dy * w + d.dx;
-        if (q < 0 || q >= size) continue;
-        if (wall[q] === 0 && occupied[q] === 0 && mark[q] !== stampHere) {
-          mark[q] = stampHere;
+        if (wall[q] === 0 && occupied[q] === 0 && marks[q] !== stampHere) {
+          marks[q] = stampHere;
           stack[n++] = q;
         }
       }
@@ -289,7 +269,7 @@ function solvePushOptimal(lv: Level, exit: number | null, maxStates = MAX_STATES
   const pushDir: number[] = [-1];
   const index = new Map<string, number>();
   for (const b of lv.boxes) occupied[b] = 1;
-  const startLow = flood(lv.player, ++stamp);
+  const startLow = floodRegion(seen, lv.player, ++stamp);
   index.set(keyOf(lv.boxes, startLow), 0);
   for (const b of lv.boxes) occupied[b] = 0;
   let found = solved(lv.boxes) && (exit === null || seen[exit] === stamp) ? 0 : -1;
@@ -297,7 +277,7 @@ function solvePushOptimal(lv: Level, exit: number | null, maxStates = MAX_STATES
   for (let head = 0; found < 0 && head < statesBoxes.length; head++) {
     const boxes = statesBoxes[head];
     for (const b of boxes) occupied[b] = 1;
-    flood(statesPlayer[head], ++stamp);
+    floodRegion(seen, statesPlayer[head], ++stamp);
     const here = stamp;
     for (let bi = 0; bi < boxes.length && found < 0; bi++) {
       const b = boxes[bi];
@@ -317,7 +297,7 @@ function solvePushOptimal(lv: Level, exit: number | null, maxStates = MAX_STATES
           next = boxes.slice();
           next[bi] = t;
           next.sort((a, x) => a - x);
-          low = floodMark(b, ++stamp);
+          low = floodRegion(mark, b, ++stamp);
           key = keyOf(next, low);
         }
         occupied[t] = 0;
